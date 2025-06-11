@@ -1,0 +1,147 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: realtime
+  namespace: supabase
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: realtime
+  template:
+    metadata:
+      labels:
+        app: realtime
+    spec:
+      containers:
+      - name: realtime
+        image: supabase/realtime:latest
+        env:
+        - name: PORT
+          value: "4000"
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: supabase-db
+              key: host
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_NAME
+          value: "supabase"
+        - name: DB_USER
+          value: "supabase"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: supabase-db
+              key: password
+        - name: DB_SSL
+          value: "false"
+        - name: DB_POOL_SIZE
+          value: "10"
+        - name: DB_QUEUE_TARGET
+          value: "50"
+        - name: DB_QUEUE_INTERVAL
+          value: "1000"
+        - name: REPLICATION_MODE
+          value: "RLS"
+        - name: REPLICATION_POLL_INTERVAL
+          value: "100"
+        - name: SECURE_CHANNELS
+          value: "true"
+        - name: SLOT_NAME
+          value: "supabase_realtime_rls"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: supabase-jwt
+              key: secret
+        - name: JWT_ALGORITHM
+          value: "HS256"
+        - name: SECRET_KEY_BASE
+          valueFrom:
+            secretKeyRef:
+              name: supabase-realtime
+              key: secret-key-base
+        - name: REGION
+          value: "us-central1"
+        - name: PHX_SERVER
+          value: "true"
+        - name: MIX_ENV
+          value: "prod"
+        - name: SSL_DISTRIBUTED_NODE_OPTIONS
+          value: "server_only"
+        ports:
+        - name: http
+          containerPort: 4000
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 4000
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 4000
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 3
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+      tolerations:
+      - key: "supabase"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: realtime
+  namespace: supabase
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 4000
+    targetPort: 4000
+  selector:
+    app: realtime
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: realtime
+  namespace: supabase
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: realtime
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

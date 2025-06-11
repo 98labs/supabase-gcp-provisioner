@@ -1,0 +1,123 @@
+swagger: "2.0"
+info:
+  title: Supabase API Gateway
+  description: API Gateway configuration for Supabase on GCP
+  version: "1.0.0"
+host: api.example.com
+schemes:
+  - https
+produces:
+  - application/json
+securityDefinitions:
+  api_key:
+    type: apiKey
+    name: apikey
+    in: header
+  bearer_auth:
+    type: apiKey
+    name: Authorization
+    in: header
+paths:
+  /auth/v1/{proxy}:
+    x-google-backend:
+      address: https://supabase-auth-xxxxx.a.run.app
+      path_translation: APPEND_PATH_TO_ADDRESS
+    get:
+      summary: Auth service endpoints
+      operationId: authGet
+      parameters:
+        - name: proxy
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+    post:
+      summary: Auth service endpoints
+      operationId: authPost
+      parameters:
+        - name: proxy
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+  /rest/v1/{proxy}:
+    x-google-backend:
+      address: https://supabase-rest-xxxxx.a.run.app
+      path_translation: APPEND_PATH_TO_ADDRESS
+    get:
+      summary: REST API endpoints
+      operationId: restGet
+      security:
+        - api_key: []
+      parameters:
+        - name: proxy
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+    post:
+      summary: REST API endpoints
+      operationId: restPost
+      security:
+        - api_key: []
+      parameters:
+        - name: proxy
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+  /storage/v1/{proxy}:
+    x-google-backend:
+      address: https://supabase-storage-xxxxx.a.run.app
+      path_translation: APPEND_PATH_TO_ADDRESS
+    get:
+      summary: Storage API endpoints
+      operationId: storageGet
+      security:
+        - bearer_auth: []
+      parameters:
+        - name: proxy
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+    post:
+      summary: Storage API endpoints
+      operationId: storagePost
+      security:
+        - bearer_auth: []
+      parameters:
+        - name: proxy
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+  /pg/{proxy}:
+    x-google-backend:
+      address: https://supabase-meta-xxxxx.a.run.app
+      path_translation: APPEND_PATH_TO_ADDRESS
+    get:
+      summary: Postgres Meta endpoints
+      operationId: metaGet
+      security:
+        - bearer_auth: []
+      parameters:
+        - name: proxy
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success

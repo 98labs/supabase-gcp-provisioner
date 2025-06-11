@@ -1,0 +1,43 @@
+# GCP Configuration
+project_id   = "your-gcp-project-id"
+project_name = "supabase"
+region       = "us-central1"
+zone         = "us-central1-a"
+environment  = "prod"
+
+# Database Configuration
+database_type              = "cloudsql"  # or "alloydb"
+database_version           = "POSTGRES_15"
+database_tier              = "db-custom-4-16384"
+database_disk_size         = 100
+database_availability_type = "REGIONAL"
+
+# GKE Configuration
+gke_node_count        = 3
+gke_node_machine_type = "n2-standard-4"
+gke_node_disk_size    = 100
+
+# Supabase Configuration
+jwt_secret       = "your-super-secret-jwt-key-min-32-chars"
+anon_key         = "your-anon-key"
+service_role_key = "your-service-role-key"
+
+# Dashboard Configuration
+dashboard_username = "admin"
+dashboard_password = "secure-password-here"
+
+# SMTP Configuration (optional)
+smtp_host       = "smtp.sendgrid.net"
+smtp_port       = 587
+smtp_user       = "apikey"
+smtp_password   = "your-sendgrid-api-key"
+smtp_from_email = "noreply@yourdomain.com"
+
+# Domain Configuration
+domain               = "api.yourdomain.com"
+enable_custom_domain = true
+
+# Feature Flags
+enable_monitoring  = true
+enable_logging     = true
+enable_cloud_armor = true
