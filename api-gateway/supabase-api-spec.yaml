@@ -1,0 +1,525 @@
+swagger: "2.0"
+info:
+  title: Supabase API Gateway
+  description: API Gateway configuration for Supabase on Google Cloud
+  version: "1.0.0"
+host: "${API_GATEWAY_HOST}"
+x-google-management:
+  metrics:
+    - name: "supabase_requests"
+      displayName: "Supabase API Requests"
+      description: "Tracks API requests to Supabase services"
+      metricKind: DELTA
+      valueType: INT64
+  quota:
+    limits:
+      - name: "read-limit"
+        metric: "supabase_requests"
+        unit: "1/min/{project}"
+        values:
+          STANDARD: 10000
+schemes:
+  - https
+produces:
+  - application/json
+securityDefinitions:
+  api_key:
+    type: apiKey
+    name: apikey
+    in: header
+  bearer_auth:
+    type: apiKey
+    name: Authorization
+    in: header
+paths:
+  # Auth Service Routes
+  /auth/v1/{path}:
+    x-google-backend:
+      address: "${AUTH_SERVICE_URL}"
+      path_translation: APPEND_PATH_TO_ADDRESS
+      deadline: 30.0
+    get:
+      summary: Auth service GET endpoints
+      operationId: authGet
+      parameters:
+        - name: path
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+        401:
+          description: Unauthorized
+        500:
+          description: Internal Server Error
+    post:
+      summary: Auth service POST endpoints
+      operationId: authPost
+      parameters:
+        - name: path
+          in: path
+          required: true
+          type: string
+      consumes:
+        - application/json
+      responses:
+        200:
+          description: Success
+        400:
+          description: Bad Request
+        401:
+          description: Unauthorized
+        500:
+          description: Internal Server Error
+    put:
+      summary: Auth service PUT endpoints
+      operationId: authPut
+      parameters:
+        - name: path
+          in: path
+          required: true
+          type: string
+      consumes:
+        - application/json
+      responses:
+        200:
+          description: Success
+        400:
+          description: Bad Request
+        401:
+          description: Unauthorized
+        500:
+          description: Internal Server Error
+    delete:
+      summary: Auth service DELETE endpoints
+      operationId: authDelete
+      parameters:
+        - name: path
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+        500:
+          description: Internal Server Error
+  
+  # REST API Routes (PostgREST)
+  /rest/v1/{path}:
+    x-google-backend:
+      address: "${REST_SERVICE_URL}"
+      path_translation: APPEND_PATH_TO_ADDRESS
+      deadline: 30.0
+    get:
+      summary: REST API GET endpoints
+      operationId: restGet
+      security:
+        - api_key: []
+        - bearer_auth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          type: string
+        - name: select
+          in: query
+          required: false
+          type: string
+        - name: order
+          in: query
+          required: false
+          type: string
+        - name: limit
+          in: query
+          required: false
+          type: integer
+        - name: offset
+          in: query
+          required: false
+          type: integer
+      responses:
+        200:
+          description: Success
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+        500:
+          description: Internal Server Error
+    post:
+      summary: REST API POST endpoints
+      operationId: restPost
+      security:
+        - api_key: []
+        - bearer_auth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          type: string
+      consumes:
+        - application/json
+      responses:
+        201:
+          description: Created
+        400:
+          description: Bad Request
+        401:
+          description: Unauthorized
+        409:
+          description: Conflict
+        500:
+          description: Internal Server Error
+    patch:
+      summary: REST API PATCH endpoints
+      operationId: restPatch
+      security:
+        - api_key: []
+        - bearer_auth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          type: string
+      consumes:
+        - application/json
+      responses:
+        200:
+          description: Success
+        400:
+          description: Bad Request
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+        500:
+          description: Internal Server Error
+    delete:
+      summary: REST API DELETE endpoints
+      operationId: restDelete
+      security:
+        - api_key: []
+        - bearer_auth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          type: string
+      responses:
+        204:
+          description: No Content
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+        500:
+          description: Internal Server Error
+  
+  # Storage Service Routes
+  /storage/v1/{path}:
+    x-google-backend:
+      address: "${STORAGE_SERVICE_URL}"
+      path_translation: APPEND_PATH_TO_ADDRESS
+      deadline: 300.0
+    get:
+      summary: Storage service GET endpoints
+      operationId: storageGet
+      security:
+        - bearer_auth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+        500:
+          description: Internal Server Error
+    post:
+      summary: Storage service POST endpoints
+      operationId: storagePost
+      security:
+        - bearer_auth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          type: string
+      consumes:
+        - application/json
+        - multipart/form-data
+      responses:
+        200:
+          description: Success
+        400:
+          description: Bad Request
+        401:
+          description: Unauthorized
+        413:
+          description: Payload Too Large
+        500:
+          description: Internal Server Error
+    put:
+      summary: Storage service PUT endpoints
+      operationId: storagePut
+      security:
+        - bearer_auth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          type: string
+      consumes:
+        - application/json
+        - multipart/form-data
+      responses:
+        200:
+          description: Success
+        400:
+          description: Bad Request
+        401:
+          description: Unauthorized
+        413:
+          description: Payload Too Large
+        500:
+          description: Internal Server Error
+    delete:
+      summary: Storage service DELETE endpoints
+      operationId: storageDelete
+      security:
+        - bearer_auth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+        500:
+          description: Internal Server Error
+  
+  # Postgres Meta Service Routes
+  /pg/{path}:
+    x-google-backend:
+      address: "${META_SERVICE_URL}"
+      path_translation: APPEND_PATH_TO_ADDRESS
+      deadline: 30.0
+    get:
+      summary: Postgres Meta GET endpoints
+      operationId: metaGet
+      security:
+        - bearer_auth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+        500:
+          description: Internal Server Error
+    post:
+      summary: Postgres Meta POST endpoints
+      operationId: metaPost
+      security:
+        - bearer_auth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          type: string
+      consumes:
+        - application/json
+      responses:
+        200:
+          description: Success
+        400:
+          description: Bad Request
+        401:
+          description: Unauthorized
+        500:
+          description: Internal Server Error
+  
+  # Realtime Service Routes (WebSocket upgrade handled separately)
+  /realtime/v1/{path}:
+    x-google-backend:
+      address: "${REALTIME_SERVICE_URL}"
+      path_translation: APPEND_PATH_TO_ADDRESS
+      deadline: 30.0
+    get:
+      summary: Realtime service endpoints
+      operationId: realtimeGet
+      security:
+        - api_key: []
+        - bearer_auth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+        401:
+          description: Unauthorized
+        500:
+          description: Internal Server Error
+  
+  # GraphQL Routes
+  /graphql/v1:
+    x-google-backend:
+      address: "${GRAPHQL_SERVICE_URL}"
+      path_translation: APPEND_PATH_TO_ADDRESS
+      deadline: 60.0
+    post:
+      summary: GraphQL endpoint
+      operationId: graphql
+      security:
+        - api_key: []
+        - bearer_auth: []
+      consumes:
+        - application/json
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              query:
+                type: string
+              variables:
+                type: object
+              operationName:
+                type: string
+      responses:
+        200:
+          description: Success
+        400:
+          description: Bad Request
+        401:
+          description: Unauthorized
+        500:
+          description: Internal Server Error
+  
+  # Studio Console Routes
+  /console:
+    x-google-backend:
+      address: "${STUDIO_SERVICE_URL}"
+      deadline: 30.0
+    get:
+      summary: Studio Dashboard
+      operationId: studioRoot
+      responses:
+        200:
+          description: Success
+  
+  /console/{path}:
+    x-google-backend:
+      address: "${STUDIO_SERVICE_URL}"
+      path_translation: APPEND_PATH_TO_ADDRESS
+      deadline: 30.0
+    get:
+      summary: Studio Dashboard routes
+      operationId: studioGet
+      parameters:
+        - name: path
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+    post:
+      summary: Studio Dashboard API routes
+      operationId: studioPost
+      parameters:
+        - name: path
+          in: path
+          required: true
+          type: string
+      consumes:
+        - application/json
+      responses:
+        200:
+          description: Success
+        400:
+          description: Bad Request
+        401:
+          description: Unauthorized
+        500:
+          description: Internal Server Error
+  
+  # Edge Functions Routes
+  /functions/v1/{function}:
+    x-google-backend:
+      address: "${FUNCTIONS_SERVICE_URL}"
+      path_translation: APPEND_PATH_TO_ADDRESS
+      deadline: 300.0
+    get:
+      summary: Edge Functions GET
+      operationId: functionsGet
+      security:
+        - bearer_auth: []
+      parameters:
+        - name: function
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+        401:
+          description: Unauthorized
+        404:
+          description: Function Not Found
+        500:
+          description: Internal Server Error
+    post:
+      summary: Edge Functions POST
+      operationId: functionsPost
+      security:
+        - bearer_auth: []
+      parameters:
+        - name: function
+          in: path
+          required: true
+          type: string
+      consumes:
+        - application/json
+      responses:
+        200:
+          description: Success
+        400:
+          description: Bad Request
+        401:
+          description: Unauthorized
+        404:
+          description: Function Not Found
+        500:
+          description: Internal Server Error
+
+# CORS configuration
+x-google-endpoints:
+  - name: "${API_GATEWAY_HOST}"
+    allowCors: true

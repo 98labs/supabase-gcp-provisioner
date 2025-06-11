@@ -37,19 +37,17 @@ output "database_password" {
   sensitive = true
 }
 
-output "gke_cluster_info" {
-  value = {
-    name     = google_container_cluster.supabase_gke.name
-    endpoint = google_container_cluster.supabase_gke.endpoint
-    location = google_container_cluster.supabase_gke.location
-  }
-  sensitive = true
+output "api_gateway_endpoint" {
+  value = "https://${google_api_gateway_gateway.supabase_gateway.default_hostname}"
+  description = "The endpoint URL for the API Gateway"
 }
 
 output "cloud_run_service_urls" {
-  value = {
-    for k, v in google_cloud_run_v2_service.services : k => v.uri
-  }
+  value = merge(
+    { for k, v in google_cloud_run_v2_service.services : k => v.uri },
+    { realtime = google_cloud_run_v2_service.realtime.uri }
+  )
+  description = "Internal URLs for Cloud Run services (not directly accessible)"
 }
 
 output "storage_bucket" {
@@ -58,10 +56,6 @@ output "storage_bucket" {
 
 output "artifact_registry" {
   value = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.supabase_docker.repository_id}"
-}
-
-output "connect_to_gke" {
-  value = "gcloud container clusters get-credentials ${google_container_cluster.supabase_gke.name} --zone ${var.zone} --project ${var.project_id}"
 }
 
 output "dashboard_url" {
@@ -75,25 +69,31 @@ output "next_steps" {
     Supabase deployment completed!
     ========================================
     
-    1. Point your domain (${var.domain}) to: ${google_compute_global_address.lb_ip.address}
+    1. Access your Supabase instance:
+       ${var.enable_custom_domain ? "Custom Domain URL: ${self.supabase_url.value}" : "API Gateway URL: ${self.api_gateway_endpoint.value}"}
+       ${var.enable_custom_domain ? "Point your domain (${var.domain}) to: ${google_compute_global_address.lb_ip.address}" : ""}
     
-    2. Connect to GKE cluster:
-       ${self.connect_to_gke.value}
-    
-    3. Deploy Kong and Realtime to GKE:
-       kubectl apply -f ../k8s/
-    
-    4. Access your Supabase instance:
-       URL: ${self.supabase_url.value}
+    2. Authentication Keys:
        Anon Key: <sensitive - use 'terraform output -raw supabase_anon_key'>
        Service Role Key: <sensitive - use 'terraform output -raw supabase_service_role_key'>
     
-    5. Database connection:
+    3. Database connection:
        Host: <sensitive - use 'terraform output -raw database_host'>
        Port: 5432
        Database: supabase
        User: supabase
        Password: <sensitive - use 'terraform output -raw database_password'>
+    
+    4. Studio Dashboard:
+       ${var.enable_custom_domain ? "https://${var.domain}/console" : "${self.api_gateway_endpoint.value}/console"}
+    
+    5. API Endpoints:
+       - Auth: /auth/v1/
+       - REST: /rest/v1/
+       - Storage: /storage/v1/
+       - Realtime: /realtime/v1/
+       - GraphQL: /graphql/v1
+       - Functions: /functions/v1/
     
     6. Monitoring dashboard:
        ${self.dashboard_url.value}

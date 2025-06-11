@@ -56,25 +56,18 @@ Read Replicas: 2
 Estimated: $2000/month
 ```
 
-### 2. Google Kubernetes Engine (GKE)
+### 2. Google Cloud API Gateway
 
-#### Cluster Management
 ```
-GKE Cluster management fee: $0.10/hour
-Monthly: ~$73
-```
+API Gateway pricing:
+- First 2 million calls/month: Free
+- Next 998 million calls/month: $3.00 per million
+- Over 1 billion calls/month: $1.50 per million
 
-#### Node Pool Costs
-```
-Standard Setup (3 nodes):
-- Machine type: n2-standard-4
-- vCPUs: 4 per node (12 total)
-- Memory: 16 GB per node (48 GB total)
-- Disk: 100 GB SSD per node
-- Estimated: $450/month
-
-With Preemptible Nodes (80% discount):
-- Estimated: $90/month
+Example (10 million calls/month):
+- First 2M: Free
+- Next 8M: 8 × $3.00 = $24
+- Total: $24/month
 ```
 
 ### 3. Cloud Run Services
@@ -241,34 +234,34 @@ Total Monthly Cost =
 #### Startup (10,000 users)
 ```
 Database (db-custom-2-8192): $150
-GKE (2 preemptible nodes): $60
+API Gateway: $0 (under free tier)
 Cloud Run (minimal): $100
 Load Balancer: $44
 Storage (50GB + 500GB egress): $62
 Monitoring: $30
-Total: ~$446/month
+Total: ~$386/month
 ```
 
 #### Growing Business (100,000 users)
 ```
 Database (db-custom-4-16384 + HA): $400
-GKE (3 standard nodes): $450
-Cloud Run (moderate): $200
+API Gateway (50M calls): $144
+Cloud Run (moderate): $300
 Load Balancer: $44
 Storage (500GB + 5TB egress): $610
 Monitoring: $100
-Total: ~$1,804/month
+Total: ~$1,598/month
 ```
 
 #### Enterprise (1M+ users)
 ```
 Database (db-custom-16-65536 + HA + replicas): $2000
-GKE (5 nodes + autoscaling): $750
-Cloud Run (high usage): $500
+API Gateway (500M calls): $1,494
+Cloud Run (high usage): $800
 Load Balancer: $44
 Storage (5TB + 50TB egress): $6,100
 Monitoring: $200
-Total: ~$9,594/month
+Total: ~$10,638/month
 ```
 
 ## Cost Monitoring

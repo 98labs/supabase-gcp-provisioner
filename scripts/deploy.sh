@@ -36,12 +36,6 @@ check_prerequisites() {
         exit 1
     fi
     
-    # Check kubectl
-    if ! command -v kubectl &> /dev/null; then
-        print_error "kubectl not found. Please install kubectl."
-        exit 1
-    fi
-    
     # Check docker
     if ! command -v docker &> /dev/null; then
         print_error "docker not found. Please install Docker."
@@ -165,65 +159,10 @@ build_docker_images() {
     print_status "Docker images ready!"
 }
 
-# Deploy Kubernetes resources
-deploy_kubernetes() {
-    print_status "Deploying Kubernetes resources..."
-    
-    # Get cluster credentials
-    print_status "Getting GKE credentials..."
-    eval $(terraform -chdir=terraform output -raw connect_to_gke)
-    
-    # Create namespace
-    kubectl apply -f k8s/namespace.yaml
-    
-    # Create secrets from Terraform outputs
-    print_status "Creating Kubernetes secrets..."
-    
-    # Get values from Terraform
-    ANON_KEY=$(terraform -chdir=terraform output -raw supabase_anon_key)
-    SERVICE_ROLE_KEY=$(terraform -chdir=terraform output -raw supabase_service_role_key)
-    JWT_SECRET=$(terraform -chdir=terraform output -raw jwt_secret)
-    DB_HOST=$(terraform -chdir=terraform output -raw database_host)
-    DB_PASSWORD=$(terraform -chdir=terraform output -raw database_password)
-    SECRET_KEY_BASE=$(openssl rand -hex 64)
-    
-    # Create secrets
-    kubectl create secret generic supabase-keys \
-        --namespace=supabase \
-        --from-literal=anon-key="$ANON_KEY" \
-        --from-literal=service-role-key="$SERVICE_ROLE_KEY" \
-        --dry-run=client -o yaml | kubectl apply -f -
-    
-    kubectl create secret generic supabase-jwt \
-        --namespace=supabase \
-        --from-literal=secret="$JWT_SECRET" \
-        --dry-run=client -o yaml | kubectl apply -f -
-    
-    kubectl create secret generic supabase-db \
-        --namespace=supabase \
-        --from-literal=host="$DB_HOST" \
-        --from-literal=password="$DB_PASSWORD" \
-        --dry-run=client -o yaml | kubectl apply -f -
-    
-    kubectl create secret generic supabase-realtime \
-        --namespace=supabase \
-        --from-literal=secret-key-base="$SECRET_KEY_BASE" \
-        --dry-run=client -o yaml | kubectl apply -f -
-    
-    # Deploy Kong
-    print_status "Deploying Kong API Gateway..."
-    kubectl apply -f k8s/kong.yaml
-    
-    # Deploy Realtime
-    print_status "Deploying Realtime service..."
-    kubectl apply -f k8s/realtime.yaml
-    
-    # Wait for deployments
-    print_status "Waiting for deployments to be ready..."
-    kubectl wait --namespace=supabase --for=condition=available --timeout=300s deployment/kong
-    kubectl wait --namespace=supabase --for=condition=available --timeout=300s deployment/realtime
-    
-    print_status "Kubernetes resources deployed!"
+# Deploy API Gateway
+deploy_api_gateway() {
+    print_status "API Gateway will be deployed as part of Terraform..."
+    print_status "Google API Gateway provides automatic routing to all services"
 }
 
 # Initialize database
@@ -244,24 +183,38 @@ print_summary() {
     echo "====================================="
     
     # Get outputs
-    LOAD_BALANCER_IP=$(terraform -chdir=terraform output -raw load_balancer_ip_address)
-    SUPABASE_URL=$(terraform -chdir=terraform output -raw supabase_url)
+    API_GATEWAY_URL=$(terraform -chdir=terraform output -raw api_gateway_endpoint 2>/dev/null || echo "Not available")
     DOMAIN=$(grep "^domain" terraform/terraform.tfvars | cut -d'"' -f2)
+    ENABLE_CUSTOM_DOMAIN=$(grep "^enable_custom_domain" terraform/terraform.tfvars | grep -q "true" && echo "true" || echo "false")
     
-    echo "Load Balancer IP: $LOAD_BALANCER_IP"
-    echo "Supabase URL: $SUPABASE_URL"
+    if [ "$ENABLE_CUSTOM_DOMAIN" = "true" ]; then
+        LOAD_BALANCER_IP=$(terraform -chdir=terraform output -raw load_balancer_ip_address)
+        SUPABASE_URL=$(terraform -chdir=terraform output -raw supabase_url)
+        echo "Load Balancer IP: $LOAD_BALANCER_IP"
+        echo "Supabase URL: $SUPABASE_URL"
+        echo ""
+        echo "Next Steps:"
+        echo "1. Point your domain ($DOMAIN) to: $LOAD_BALANCER_IP"
+        echo "2. Wait for SSL certificate to be provisioned (can take up to 15 minutes)"
+        echo "3. Access your Supabase instance at: $SUPABASE_URL"
+    else
+        echo "API Gateway URL: $API_GATEWAY_URL"
+        echo ""
+        echo "Access your Supabase instance at: $API_GATEWAY_URL"
+    fi
+    
     echo ""
-    echo "Next Steps:"
-    echo "1. Point your domain ($DOMAIN) to: $LOAD_BALANCER_IP"
-    echo "2. Wait for SSL certificate to be provisioned (can take up to 15 minutes)"
-    echo "3. Access your Supabase instance at: $SUPABASE_URL"
+    echo "Studio Dashboard: ${API_GATEWAY_URL}/console"
     echo ""
     echo "To view all outputs including sensitive values:"
     echo "  cd terraform && terraform output"
     echo ""
-    echo "To monitor your deployment:"
-    echo "  kubectl get pods -n supabase"
-    echo "  gcloud container clusters get-credentials <cluster-name> --zone <zone>"
+    echo "API Endpoints:"
+    echo "  - Auth: /auth/v1/"
+    echo "  - REST: /rest/v1/"
+    echo "  - Storage: /storage/v1/"
+    echo "  - Realtime: /realtime/v1/"
+    echo "  - GraphQL: /graphql/v1"
     echo "====================================="
 }
 
@@ -274,7 +227,7 @@ main() {
     setup_gcp_project
     deploy_terraform
     build_docker_images
-    deploy_kubernetes
+    deploy_api_gateway
     init_database
     print_summary
     

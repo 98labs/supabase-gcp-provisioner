@@ -11,7 +11,6 @@ This guide walks you through deploying Supabase on Google Cloud Platform.
 2. **Local Tools**
    - [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
    - [Terraform](https://www.terraform.io/downloads) >= 1.0
-   - [kubectl](https://kubernetes.io/docs/tasks/tools/)
    - [Docker](https://docs.docker.com/get-docker/)
    - Git
 
@@ -94,9 +93,9 @@ smtp_from_email = "noreply@yourdomain.com"
 This script will:
 1. Validate prerequisites
 2. Initialize and apply Terraform
-3. Build and push Docker images
-4. Deploy Kubernetes resources
-5. Configure secrets
+3. Build and push Docker images (if needed)
+4. Deploy API Gateway configuration
+5. Configure all services
 
 ### 3.2 Monitor the Deployment
 
@@ -107,20 +106,23 @@ terraform plan
 terraform apply
 ```
 
-Monitor Kubernetes deployments:
+Monitor Cloud Run deployments:
 ```bash
-kubectl get pods -n supabase -w
+gcloud run services list --region=<your-region>
 ```
 
-## Step 4: Configure DNS
+## Step 4: Configure Access
 
-### 4.1 Get the Load Balancer IP
+### 4.1 Using Custom Domain (Optional)
+
+If you enabled custom domain:
+
+#### Get the Load Balancer IP
 ```bash
 terraform -chdir=terraform output load_balancer_ip_address
 ```
 
-### 4.2 Update DNS Records
-
+#### Update DNS Records
 Add an A record pointing your domain to the load balancer IP:
 ```
 Type: A
@@ -129,12 +131,20 @@ Value: <LOAD_BALANCER_IP>
 TTL: 300
 ```
 
-### 4.3 Wait for SSL Certificate
-
+#### Wait for SSL Certificate
 The managed SSL certificate can take up to 15 minutes to provision. Check status:
 ```bash
 gcloud compute ssl-certificates describe supabase-ssl-cert --global
 ```
+
+### 4.2 Using API Gateway URL Directly
+
+If not using custom domain, get the API Gateway URL:
+```bash
+terraform -chdir=terraform output api_gateway_endpoint
+```
+
+This URL is immediately available and includes SSL.
 
 ## Step 5: Initialize Database
 

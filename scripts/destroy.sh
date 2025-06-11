@@ -32,22 +32,9 @@ confirm_destroy() {
     fi
 }
 
-# Delete Kubernetes resources
-delete_kubernetes() {
-    print_status "Deleting Kubernetes resources..."
-    
-    # Get cluster credentials if possible
-    if terraform -chdir=terraform output -raw connect_to_gke 2>/dev/null; then
-        eval $(terraform -chdir=terraform output -raw connect_to_gke)
-        
-        # Delete resources
-        kubectl delete -f k8s/ --ignore-not-found=true || true
-        
-        # Delete namespace
-        kubectl delete namespace supabase --ignore-not-found=true || true
-    else
-        print_warning "Could not connect to GKE cluster, it may already be deleted"
-    fi
+# Delete API Gateway resources
+delete_api_gateway() {
+    print_status "API Gateway resources will be deleted as part of Terraform destroy..."
 }
 
 # Destroy Terraform resources
@@ -88,12 +75,12 @@ main() {
     print_status "Starting Supabase GCP destruction..."
     
     confirm_destroy
-    delete_kubernetes
+    delete_api_gateway
     destroy_terraform
     cleanup_local
     
     print_status "Destruction completed!"
-    print_warning "Remember to remove any DNS records pointing to the load balancer IP"
+    print_warning "Remember to remove any DNS records pointing to the load balancer IP (if using custom domain)"
 }
 
 # Run main function

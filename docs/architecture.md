@@ -2,7 +2,7 @@
 
 ## System Architecture
 
-The Supabase deployment on GCP follows a microservices architecture with the following components:
+The Supabase deployment on GCP follows a serverless microservices architecture with the following components:
 
 ```
 ┌─────────────────┐
@@ -10,46 +10,52 @@ The Supabase deployment on GCP follows a microservices architecture with the fol
 └────────┬────────┘
          │
 ┌────────▼────────┐
-│ Cloud Load      │
+│ Cloud Load      │ (Optional)
 │ Balancer + SSL  │
 └────────┬────────┘
          │
 ┌────────▼────────┐
-│  Kong Gateway   │ (GKE)
-│   (Router)      │
-└───┬─────────┬───┘
-    │         │
-┌───▼───┐ ┌───▼───┐
-│Cloud  │ │  GKE  │
-│ Run   │ │       │
-├───────┤ ├───────┤
-│ Auth  │ │Real-  │
-│ REST  │ │ time  │
-│Storage│ └───────┘
-│ Meta  │
-└───┬───┘
-    │
-┌───▼───────────┐
-│  Cloud SQL/   │
-│   AlloyDB     │
-└───────────────┘
+│ Google Cloud    │
+│ API Gateway     │
+└────────┬────────┘
+         │
+┌────────┴────────┐
+│   Cloud Run     │
+│   Services      │
+├─────────────────┤
+│ • Auth          │
+│ • REST          │
+│ • Storage       │
+│ • Meta          │
+│ • Realtime      │
+│ • Studio        │
+│ • Functions     │
+└────────┬────────┘
+         │
+┌────────▼────────┐
+│  Cloud SQL/     │
+│   AlloyDB       │
+└─────────────────┘
 ```
 
 ## Component Details
 
-### 1. Load Balancer Layer
+### 1. API Gateway Layer
+- **Google Cloud API Gateway**
+  - Fully managed API gateway service
+  - OpenAPI specification-based routing
+  - Built-in authentication and authorization
+  - Automatic scaling and high availability
+  - Request/response transformation
+  - Rate limiting and quota management
+
+### 2. Load Balancer Layer (Optional)
 - **Google Cloud Global External Application Load Balancer**
+  - Required only for custom domain setup
   - Provides global anycast IP
   - Automatic SSL certificate management
   - Cloud Armor DDoS protection
-  - URL-based routing to backends
-
-### 2. API Gateway (Kong)
-- **Deployed on GKE**
-  - Handles authentication via API keys
-  - Routes requests to appropriate services
-  - Applies rate limiting and CORS policies
-  - Manages service discovery
+  - Routes all traffic to API Gateway
 
 ### 3. Application Services
 
@@ -76,12 +82,11 @@ The Supabase deployment on GCP follows a microservices architecture with the fol
   - Schema management
   - Table and column metadata
 
-#### GKE Services
 - **Realtime**
   - WebSocket connections for real-time features
   - PostgreSQL CDC (Change Data Capture)
   - Presence and broadcast features
-  - Horizontal scaling with multiple pods
+  - Deployed on Cloud Run with WebSocket support
 
 ### 4. Database Layer
 - **Cloud SQL or AlloyDB**
@@ -103,20 +108,19 @@ The Supabase deployment on GCP follows a microservices architecture with the fol
 ```
 VPC: 10.0.0.0/16
 ├── Main Subnet: 10.0.0.0/20
-├── GKE Pods: 10.0.16.0/20
-├── GKE Services: 10.0.32.0/20
 └── VPC Connector: 10.1.0.0/28
 ```
 
 ### Security Zones
 1. **Public Zone**
-   - Load Balancer
+   - API Gateway endpoint
+   - Optional Load Balancer
    - Cloud Armor rules
 
 2. **Application Zone**
    - Cloud Run services
-   - GKE cluster
    - VPC connector for private access
+   - Service-to-service authentication
 
 3. **Data Zone**
    - Cloud SQL/AlloyDB
@@ -127,13 +131,13 @@ VPC: 10.0.0.0/16
 
 ### Authentication Flow
 ```
-Client → Load Balancer → Kong → Service
-  ↓                               ↓
-  └─── API Key (anon/service) ───┘
-                                  ↓
-                          JWT Validation
-                                  ↓
-                          Database (RLS)
+Client → API Gateway → Cloud Run Service
+  ↓                           ↓
+  └─── API Key/JWT ──────────┘
+                              ↓
+                      JWT Validation
+                              ↓
+                      Database (RLS)
 ```
 
 ### Security Layers
@@ -155,26 +159,25 @@ Client → Load Balancer → Kong → Service
 ## Scalability Design
 
 ### Horizontal Scaling
-- **Cloud Run**: Automatic scaling based on requests
-- **GKE**: HPA (Horizontal Pod Autoscaler) for Realtime
+- **Cloud Run**: Automatic scaling based on requests (0 to 1000 instances)
+- **API Gateway**: Automatic scaling, no configuration needed
 - **Database**: Read replicas for scaling reads
 
 ### Vertical Scaling
 - **Cloud Run**: Up to 32GB RAM, 8 vCPUs per instance
-- **GKE**: Node pools with different machine types
 - **Database**: Resize instances with minimal downtime
 
 ## High Availability
 
 ### Multi-Zone Deployment
-- GKE cluster spans multiple zones
+- Cloud Run services automatically deployed across zones
 - Cloud SQL regional configuration
-- Cloud Run services in multiple zones
+- API Gateway multi-region support
 
 ### Failover Strategy
 - Automatic failover for database
-- Load balancer health checks
-- Kubernetes self-healing
+- Cloud Run automatic instance replacement
+- API Gateway automatic rerouting
 
 ## Monitoring and Observability
 

@@ -169,18 +169,19 @@ CREATE EXTENSION IF NOT EXISTS "pg_graphql";
 CREATE EXTENSION IF NOT EXISTS "pg_jsonschema";
 ```
 
-## Kong API Gateway Routes
+## API Gateway Routes
 
 ### Default Routes Configuration
 
 ```yaml
-/auth/v1/*    → Auth Service (Port 9999)
-/rest/v1/*    → PostgREST (Port 3000)
-/realtime/v1/* → Realtime (Port 4000)
-/storage/v1/*  → Storage API (Port 5000)
-/pg/*         → Postgres Meta (Port 8080)
-/graphql/v1/* → GraphQL (Port 8080)
-/console/*    → Studio Dashboard (Port 3000)
+/auth/v1/*    → Auth Service (Cloud Run)
+/rest/v1/*    → PostgREST (Cloud Run)
+/realtime/v1/* → Realtime (Cloud Run)
+/storage/v1/*  → Storage API (Cloud Run)
+/pg/*         → Postgres Meta (Cloud Run)
+/graphql/v1/* → GraphQL (Cloud Run)
+/console/*    → Studio Dashboard (Cloud Run)
+/functions/v1/* → Edge Functions (Cloud Run)
 ```
 
 ### Rate Limiting Configuration
