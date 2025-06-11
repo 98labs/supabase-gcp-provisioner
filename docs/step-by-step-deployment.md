@@ -178,9 +178,29 @@ curl $DOMAIN/storage/v1/version
 
 # Realtime
 curl $DOMAIN/realtime/v1/
+
+# Studio Dashboard
+curl $DOMAIN/console
 ```
 
-### 6.2 Access Monitoring
+### 6.2 Access Studio Dashboard
+
+Navigate to `https://api.yourdomain.com/console` in your browser.
+
+**Default Credentials:**
+- The Studio connects directly to your database
+- Use the database credentials to log in
+- Database: `supabase`
+- Username: `supabase`
+- Password: Use `terraform output -raw database_password`
+
+**First Time Setup:**
+1. Access the Studio URL
+2. It will auto-connect to your Supabase instance
+3. You can manage tables, users, and run SQL queries
+4. Configure additional settings as needed
+
+### 6.3 Access Monitoring
 
 View the monitoring dashboard:
 ```bash

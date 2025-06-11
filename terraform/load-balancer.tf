@@ -199,6 +199,12 @@ resource "google_compute_url_map" "lb" {
       service = google_compute_backend_service.cloud_run["meta"].id
     }
     
+    # Studio console
+    path_rule {
+      paths   = ["/console", "/console/*"]
+      service = google_compute_backend_service.cloud_run["studio"].id
+    }
+    
     # Other services handled by Kong
     path_rule {
       paths   = ["/realtime/*", "/graphql/*", "/functions/*"]

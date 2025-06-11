@@ -84,16 +84,25 @@ Pricing based on:
 - Memory: $0.00000250/GiB-second
 - Requests: $0.40/million requests
 
-#### Per Service Estimate (Auth, REST, Storage, Meta)
+#### Per Service Estimate (Auth, REST, Storage, Meta, Studio)
 ```
-Minimum instances: 1
-Maximum instances: 10
-Average usage: 2 instances
-CPU: 1 vCPU
-Memory: 1 GiB
+Standard services (Auth, REST, Storage, Meta):
+- Minimum instances: 1
+- Maximum instances: 10
+- Average usage: 2 instances
+- CPU: 1 vCPU
+- Memory: 1 GiB
+- Per service: ~$50/month
 
-Per service: ~$50/month
-Total (4 services): ~$200/month
+Studio (Dashboard):
+- Minimum instances: 1
+- Maximum instances: 5
+- Average usage: 2 instances
+- CPU: 2 vCPU
+- Memory: 2 GiB
+- Estimated: ~$100/month
+
+Total (5 services): ~$300/month
 ```
 
 ### 4. Load Balancer

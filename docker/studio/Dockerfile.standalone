@@ -1,0 +1,19 @@
+# Standalone Studio Dockerfile that builds from Supabase Docker image
+FROM supabase/studio:latest
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV HOSTNAME="0.0.0.0"
+ENV PORT=3000
+
+# The Supabase Studio image already includes everything needed
+# We just need to ensure it's configured properly
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/api/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1))"
+
+EXPOSE 3000
+
+# Use the existing entrypoint from the base image
+# The configuration will be passed via environment variables at runtime

@@ -52,6 +52,7 @@ gcp-provisioner/
 | Postgres Meta | Cloud Run | /pg |
 | Functions | Cloud Run | /functions |
 | GraphQL | Cloud Run | /graphql |
+| Studio (Dashboard) | Cloud Run | /console |
 | Kong (API Gateway) | GKE | / |
 
 ## Configuration

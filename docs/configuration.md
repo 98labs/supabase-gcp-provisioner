@@ -127,6 +127,29 @@ SLOT_NAME: supabase_realtime_rls
 MAX_RECORD_BYTES: 1048576
 ```
 
+### Studio Configuration
+
+```yaml
+STUDIO_DEFAULT_ORGANIZATION: Default
+STUDIO_DEFAULT_PROJECT: Default
+STUDIO_PORT: 3000
+SUPABASE_PUBLIC_URL: https://api.example.com
+SUPABASE_URL: https://api.example.com
+SUPABASE_REST_URL: https://api.example.com/rest/v1/
+STUDIO_PG_META_URL: http://meta:8080
+NEXT_PUBLIC_SUPABASE_URL: https://api.example.com
+NEXT_PUBLIC_SUPABASE_ANON_KEY: your-anon-key
+```
+
+Studio Features:
+- Database management interface
+- SQL editor with autocomplete
+- Table editor with real-time updates
+- User management
+- API documentation
+- Logs viewer
+- Real-time subscriptions debugger
+
 ## Database Extensions
 
 Required PostgreSQL extensions:
@@ -157,6 +180,7 @@ CREATE EXTENSION IF NOT EXISTS "pg_jsonschema";
 /storage/v1/*  → Storage API (Port 5000)
 /pg/*         → Postgres Meta (Port 8080)
 /graphql/v1/* → GraphQL (Port 8080)
+/console/*    → Studio Dashboard (Port 3000)
 ```
 
 ### Rate Limiting Configuration

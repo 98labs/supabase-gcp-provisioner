@@ -93,6 +93,33 @@ locals {
         PG_META_DB_PASSWORD = google_secret_manager_secret_version.db_password.name
       }
     }
+    
+    studio = {
+      image = "${google_artifact_registry_repository.supabase_docker.location}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.supabase_docker.repository_id}/studio:latest"
+      port  = 3000
+      env = {
+        STUDIO_DEFAULT_ORGANIZATION = "Default"
+        STUDIO_DEFAULT_PROJECT      = "Default"
+        STUDIO_PORT                 = "3000"
+        SUPABASE_PUBLIC_URL         = "https://${var.domain}"
+        SUPABASE_URL                = "https://${var.domain}"
+        SUPABASE_REST_URL           = "https://${var.domain}/rest/v1/"
+        STUDIO_PG_META_URL          = "http://${google_cloud_run_v2_service.services["meta"].name}:8080"
+        DEFAULT_ORGANIZATION_NAME   = "Default"
+        DEFAULT_PROJECT_NAME        = "Default"
+        NEXT_PUBLIC_SUPABASE_URL    = "https://${var.domain}"
+        NEXT_PUBLIC_SUPABASE_ANON_KEY = var.anon_key
+        NEXT_TELEMETRY_DISABLED     = "1"
+      }
+      secrets = {
+        POSTGRES_PASSWORD = google_secret_manager_secret_version.db_password.name
+        DATABASE_URL      = google_secret_manager_secret_version.db_url.name
+        SUPABASE_SERVICE_ROLE_KEY = google_secret_manager_secret_version.service_role_key.name
+      }
+      health_check_path = "/api/health"
+      cpu_limit = "4"
+      memory_limit = "4Gi"
+    }
   }
 }
 
@@ -134,6 +161,19 @@ resource "google_secret_manager_secret" "smtp_password" {
 resource "google_secret_manager_secret_version" "smtp_password" {
   secret      = google_secret_manager_secret.smtp_password.id
   secret_data = var.smtp_password
+}
+
+resource "google_secret_manager_secret" "service_role_key" {
+  secret_id = "${var.project_name}-service-role-key"
+  
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret_version" "service_role_key" {
+  secret      = google_secret_manager_secret.service_role_key.id
+  secret_data = var.service_role_key
 }
 
 # Cloud Run services
@@ -178,14 +218,14 @@ resource "google_cloud_run_v2_service" "services" {
       
       resources {
         limits = {
-          cpu    = "2"
-          memory = "2Gi"
+          cpu    = lookup(each.value, "cpu_limit", "2")
+          memory = lookup(each.value, "memory_limit", "2Gi")
         }
       }
       
       startup_probe {
         http_get {
-          path = "/health"
+          path = lookup(each.value, "health_check_path", "/health")
           port = each.value.port
         }
         initial_delay_seconds = 10
@@ -196,7 +236,7 @@ resource "google_cloud_run_v2_service" "services" {
       
       liveness_probe {
         http_get {
-          path = "/health"
+          path = lookup(each.value, "health_check_path", "/health")
           port = each.value.port
         }
         initial_delay_seconds = 30
@@ -255,7 +295,8 @@ resource "google_secret_manager_secret_iam_member" "secret_access" {
     google_secret_manager_secret.jwt_secret.id,
     google_secret_manager_secret.db_url.id,
     google_secret_manager_secret.db_password.id,
-    google_secret_manager_secret.smtp_password.id
+    google_secret_manager_secret.smtp_password.id,
+    google_secret_manager_secret.service_role_key.id
   ])
   
   secret_id = each.value

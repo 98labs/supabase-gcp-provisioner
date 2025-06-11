@@ -128,10 +128,32 @@ build_docker_images() {
     # Configure Docker for GCR
     gcloud auth configure-docker "${REGISTRY%%/*}"
     
-    # Build custom images if needed
+    # Build Studio image
+    if [ -f "docker/studio/Dockerfile" ]; then
+        print_status "Building Studio image..."
+        
+        # Clone Supabase repo if not exists
+        if [ ! -d "supabase" ]; then
+            print_status "Cloning Supabase repository..."
+            git clone --depth 1 https://github.com/supabase/supabase.git
+        fi
+        
+        # Update config with actual domain
+        DOMAIN=$(grep "^domain" terraform/terraform.tfvars | cut -d'"' -f2)
+        sed -i.bak "s/DOMAIN_PLACEHOLDER/$DOMAIN/g" docker/studio/config.json
+        
+        # Build and push Studio
+        docker build -t "$REGISTRY/studio:latest" -f docker/studio/Dockerfile .
+        docker push "$REGISTRY/studio:latest"
+        
+        # Restore config
+        mv docker/studio/config.json.bak docker/studio/config.json
+    fi
+    
+    # Build other custom images if needed
     if [ -d "docker" ]; then
         for dockerfile in docker/*/Dockerfile; do
-            if [ -f "$dockerfile" ]; then
+            if [ -f "$dockerfile" ] && [ "$(basename $(dirname "$dockerfile"))" != "studio" ]; then
                 service_name=$(basename $(dirname "$dockerfile"))
                 print_status "Building image for $service_name..."
                 docker build -t "$REGISTRY/$service_name:latest" -f "$dockerfile" docker/$service_name/
