@@ -1,5 +1,5 @@
 variable "project_id" {
-  description = "GCP Project ID"
+  description = "duet-ai-98labs-demos"
   type        = string
 }
 
@@ -51,7 +51,7 @@ variable "database_type" {
   description = "Database type: cloudsql or alloydb"
   type        = string
   default     = "cloudsql"
-  
+
   validation {
     condition     = contains(["cloudsql", "alloydb"], var.database_type)
     error_message = "Database type must be either 'cloudsql' or 'alloydb'"

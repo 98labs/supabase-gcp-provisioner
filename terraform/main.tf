@@ -1,6 +1,6 @@
 terraform {
   required_version = ">= 1.0"
-  
+
   required_providers {
     google = {
       source  = "hashicorp/google"
@@ -50,10 +50,10 @@ resource "google_project_service" "apis" {
     "alloydb.googleapis.com",
     "artifactregistry.googleapis.com"
   ])
-  
+
   project = var.project_id
   service = each.value
-  
+
   disable_on_destroy = false
 }
 
@@ -61,7 +61,7 @@ resource "google_project_service" "apis" {
 resource "google_compute_network" "supabase_vpc" {
   name                    = "${var.project_name}-vpc"
   auto_create_subnetworks = false
-  
+
   depends_on = [google_project_service.apis]
 }
 
@@ -71,12 +71,12 @@ resource "google_compute_subnetwork" "supabase_subnet" {
   ip_cidr_range = var.subnet_cidr
   region        = var.region
   network       = google_compute_network.supabase_vpc.id
-  
+
   secondary_ip_range {
     range_name    = "gke-pods"
     ip_cidr_range = var.gke_pods_cidr
   }
-  
+
   secondary_ip_range {
     range_name    = "gke-services"
     ip_cidr_range = var.gke_services_cidr
@@ -112,6 +112,6 @@ resource "google_artifact_registry_repository" "supabase_docker" {
   repository_id = "${var.project_name}-docker"
   description   = "Docker repository for Supabase images"
   format        = "DOCKER"
-  
+
   depends_on = [google_project_service.apis]
 }

@@ -7,7 +7,7 @@ output "region" {
 }
 
 output "load_balancer_ip_address" {
-  value = google_compute_global_address.lb_ip.address
+  value       = google_compute_global_address.lb_ip.address
   description = "The IP address of the load balancer. Point your domain's A record to this IP."
 }
 
@@ -26,9 +26,7 @@ output "supabase_service_role_key" {
 }
 
 output "database_host" {
-  value = var.database_type == "cloudsql" ? 
-    google_sql_database_instance.postgres[0].private_ip_address :
-    google_alloydb_instance.primary[0].ip_address
+  value     = var.database_type == "cloudsql" ? google_sql_database_instance.postgres[0].private_ip_address : google_alloydb_instance.primary[0].ip_address
   sensitive = true
 }
 
@@ -38,7 +36,7 @@ output "database_password" {
 }
 
 output "api_gateway_endpoint" {
-  value = "https://${google_api_gateway_gateway.supabase_gateway.default_hostname}"
+  value       = "https://${google_api_gateway_gateway.supabase_gateway.default_hostname}"
   description = "The endpoint URL for the API Gateway"
 }
 
@@ -70,7 +68,7 @@ output "next_steps" {
     ========================================
     
     1. Access your Supabase instance:
-       ${var.enable_custom_domain ? "Custom Domain URL: ${self.supabase_url.value}" : "API Gateway URL: ${self.api_gateway_endpoint.value}"}
+       ${var.enable_custom_domain ? "Custom Domain URL: https://${var.domain}" : "API Gateway URL: https://${google_api_gateway_gateway.supabase_gateway.default_hostname}"}
        ${var.enable_custom_domain ? "Point your domain (${var.domain}) to: ${google_compute_global_address.lb_ip.address}" : ""}
     
     2. Authentication Keys:
@@ -85,7 +83,7 @@ output "next_steps" {
        Password: <sensitive - use 'terraform output -raw database_password'>
     
     4. Studio Dashboard:
-       ${var.enable_custom_domain ? "https://${var.domain}/console" : "${self.api_gateway_endpoint.value}/console"}
+       ${var.enable_custom_domain ? "https://${var.domain}/console" : "https://${google_api_gateway_gateway.supabase_gateway.default_hostname}/console"}
     
     5. API Endpoints:
        - Auth: /auth/v1/
@@ -96,7 +94,7 @@ output "next_steps" {
        - Functions: /functions/v1/
     
     6. Monitoring dashboard:
-       ${self.dashboard_url.value}
+       ${var.enable_monitoring ? "https://console.cloud.google.com/monitoring/dashboards/custom/${google_monitoring_dashboard.supabase[0].id}?project=${var.project_id}" : "Monitoring disabled"}
     
     ========================================
   EOT
